@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buró de Biblioteca | Posgrado en Ingeniería Civil</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS (Lectura y Escritura nativa de Excel .xlsx/.xls) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        inst: {
+                            50: '#f0f4f8',
+                            100: '#d9e2ec',
+                            500: '#2b6cb0',
+                            700: '#1a365d',
+                            800: '#102a43',
+                            900: '#0a192f',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .pulse-red {
+            animation: pulseRed 2s infinite;
+        }
+        @keyframes pulseRed {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.35); }
+            50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- ========================================== -->
+    <!-- PANTALLA DE BLOQUEO / LOGIN DE SEGURIDAD   -->
+    <!-- ========================================== -->
+    <div id="loginScreen" class="fixed inset-0 z-50 bg-inst-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="bg-gradient-to-r from-inst-800 to-inst-700 p-6 text-white text-center">
+                <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-white/20">
+                    <i class="fa-solid fa-building-columns text-3xl text-amber-400"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">Buró de Crédito Bibliotecario</h1>
+                <p class="text-xs text-slate-300 mt-1">Biblioteca del Posgrado en Ingeniería Civil</p>
+            </div>
+
+            <form id="loginForm" class="p-6 space-y-4" onsubmit="handleLogin(event)">
+                <div id="loginAlert" class="hidden p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation text-sm"></i>
+                    <span id="loginAlertText">Credenciales incorrectas.</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Usuario del Sistema</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-user-shield absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <input type="text" id="loginUser" value="bibliotecario" required
+                            class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-inst-500 focus:border-inst-500 outline-none transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Contraseña o Llave Maestra</label>
+                    <div class="relative">
+                        <i class="fa-solid fa-key absolute left-3.5 top-3.5 text-slate-400"></i>
+                        <input type="password" id="loginPass" placeholder="Ingresa tu contraseña..." required
+                            class="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-inst-500 focus:border-inst-500 outline-none transition">
+                        <button type="button" onclick="togglePassVisibility()" class="absolute right-3 top-3 text-slate-400 hover:text-slate-600">
+                            <i id="eyeIcon" class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900">
+                    <div class="font-bold flex items-center gap-1.5 mb-0.5">
+                        <i class="fa-solid fa-circle-info text-amber-600"></i> Acceso inicial predeterminado:
+                    </div>
+                    Usuario: <code class="font-mono font-bold bg-amber-100 px-1.5 py-0.5 rounded">bibliotecario</code> |
+                    Clave: <code class="font-mono font-bold bg-amber-100 px-1.5 py-0.5 rounded">posgrado2026</code>
+                    <button type="button" onclick="fillDemoCredentials()" class="ml-1 underline text-inst-700 font-semibold hover:text-inst-500">Autocompletar</button>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-inst-700 hover:bg-inst-800 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-unlock-keyhole"></i> Desbloquear Sistema Local
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ENCABEZADO PRINCIPAL                       -->
+    <!-- ========================================== -->
+    <header class="bg-inst-900 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 font-bold text-xl">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-lg font-bold tracking-tight">Buró de Biblioteca</h1>
+                        <span class="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-semibold">
+                            Modo Local Seguro
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-300">Posgrado en Ingeniería Civil • Control de Solvencia y Préstamos</p>
+                </div>
+            </div>
+
+            <!-- Estado del Archivo Local y Botones Rápidos -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="connectLocalDiskFile()" id="diskSyncBtn"
+                    class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-medium flex items-center gap-2 transition"
+                    title="Conecta un archivo .json en esta PC para autoguardar cada cambio directamente en el disco duro">
+                    <i class="fa-solid fa-hard-drive text-amber-400"></i>
+                    <span id="diskSyncText">Vincular PC Local</span>
+                </button>
+
+                <button onclick="openModal('newDebtModal')"
+                    class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow transition">
+                    <i class="fa-solid fa-user-plus"></i> Nuevo Préstamo / Adeudo
+                </button>
+
+                <button onclick="lockSystem()"
+                    class="px-3 py-2 rounded-xl bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 text-red-200 text-xs font-medium flex items-center gap-1.5 transition"
+                    title="Bloquear pantalla si te levantas del escritorio">
+                    <i class="fa-solid fa-lock"></i> Bloquear
+                </button>
+            </div>
+        </div>
+
+        <!-- Barra de Navegación por Pestañas -->
+        <div class="bg-inst-800 border-t border-slate-700/70">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-1 py-1.5">
+                <button onclick="switchTab('tabSemaphore')" id="btn-tabSemaphore"
+                    class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-amber-500 text-slate-950 shadow-sm transition whitespace-nowrap">
+                    <i class="fa-solid fa-traffic-light"></i> 1. Semáforo de Consulta (Buró)
+                </button>
+                <button onclick="switchTab('tabDebtors')" id="btn-tabDebtors"
+                    class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-users-slash"></i> 2. Padrón de Deudores Activos
+                    <span id="badgeDebtorsCount" class="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('tabCatalog')" id="btn-tabCatalog"
+                    class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-book-bookmark"></i> 3. Catálogo Unificado
+                    <span id="badgeCatalogCount" class="bg-slate-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('tabExcelETL')" id="btn-tabExcelETL"
+                    class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-file-excel text-emerald-400"></i> 4. Cargar los 3 Archivos Excel (ETL)
+                </button>
+                <button onclick="switchTab('tabMigration')" id="btn-tabMigration"
+                    class="tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:bg-white/10 transition whitespace-nowrap">
+                    <i class="fa-solid fa-right-left text-sky-400"></i> 5. Migrar de PC / Seguridad
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!-- CONTENIDO PRINCIPAL                        -->
+    <!-- ========================================== -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- TARJETAS DE INDICADORES (KPIs) -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-user-clock"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Personas con Adeudo</p>
+                    <p id="kpiActiveDebtors" class="text-2xl font-extrabold text-slate-800">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-book-open-reader"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Libros No Devueltos</p>
+                    <p id="kpiTotalBooksOwed" class="text-2xl font-extrabold text-slate-800">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Títulos en Catálogo</p>
+                    <p id="kpiCatalogTitles" class="text-2xl font-extrabold text-slate-800">0</p>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-500 font-medium">Adeudos Liquidados</p>
+                    <p id="kpiResolvedCount" class="text-2xl font-extrabold text-slate-800">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- PESTAÑA 1: SEMÁFORO DE CONSULTA (BURÓ DE CRÉDITO)         -->
+        <!-- ========================================================= -->
+        <section id="tabSemaphore" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl shadow-md border border-slate-200 p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass-chart text-inst-700"></i>
+                            Verificador de Solvencia para Préstamo de Libros
+                        </h2>
+                        <p class="text-xs text-slate-500">
+                            Escribe el <strong>Nombre del solicitante</strong> o su <strong>Matrícula</strong>. El motor detecta automáticamente errores de captura (ej. <em>Baizabal / Baizbal</em> o <em>Muñoz / Muã'oz</em>).
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 text-xs">
+                        <span class="text-slate-400 self-center mr-1">Prueba rápida:</span>
+                        <button onclick="quickTestSearch('ARIEL DAVID FRIAS')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition">Ariel Frias (Duplicado)</button>
+                        <button onclick="quickTestSearch('ERIKA DURAN MUNOZ')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-700 font-medium transition">Erika Muñoz (Ñ reparada)</button>
+                        <button onclick="quickTestSearch('CARLOS HERNANDEZ SOTO')" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-emerald-700 font-medium transition">Alumno Limpio (Verde)</button>
+                    </div>
+                </div>
+
+                <!-- Barra de Búsqueda Gigante -->
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-4 text-slate-400 text-lg"></i>
+                    <input type="text" id="buroSearchInput" oninput="evaluateSemaphore(this.value)"
+                        placeholder="Escribe el nombre completo o apellidos del alumno o profesor que solicita un libro..."
+                        class="w-full pl-12 pr-28 py-3.5 text-base font-medium bg-slate-50 border-2 border-slate-300 rounded-2xl focus:bg-white focus:border-inst-600 focus:ring-4 focus:ring-inst-500/10 outline-none transition">
+                    <button onclick="clearSearch()" id="clearSearchBtn" class="hidden absolute right-3 top-2.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">
+                        Limpiar
+                    </button>
+                </div>
+
+                <!-- Contenedor Dinámico del Semáforo -->
+                <div id="semaphoreResultContainer" class="mt-6">
+                    <!-- Estado Inicial Neutro -->
+                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-8 text-center">
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-sm border border-slate-200 mb-3">
+                            <span class="w-3.5 h-3.5 rounded-full bg-red-500"></span>
+                            <span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span>
+                            <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Semáforo en Espera</span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-700">Introduce el nombre de la persona para dictaminar si se le presta el libro</h3>
+                        <p class="text-xs text-slate-500 max-w-xl mx-auto mt-1">
+                            El sistema cruzará el nombre contra el historial de deudores del Posgrado en Ingeniería Civil, mostrando qué libros debe, desde qué fecha y permitiendo registrar a personas nuevas al instante.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerta de Homónimos / Errores de Dedo Detectados en la Base -->
+            <div id="duplicateWarningBanner" class="hidden bg-amber-50 border border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-amber-900">Auditoría Inteligente: Se detectaron nombres casi idénticos con errores de captura</h4>
+                        <p id="duplicateWarningText" class="text-xs text-amber-800 mt-0.5">
+                            Ejemplo: "ARIEL DAVID FRIAS BAIZABAL" y "ARIEL DAVID FRIAS BAIZBAL" parecen ser la misma persona.
+                        </p>
+                    </div>
+                </div>
+                <button onclick="unifyAllDuplicates()" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shrink-0 shadow-sm transition">
+                    <i class="fa-solid fa-object-group mr-1"></i> Unificar Registros Duplicados
+                </button>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- PESTAÑA 2: PADRÓN DE DEUDORES Y SOLVENCIAS                -->
+        <!-- ========================================================= -->
+        <section id="tabDebtors" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Padrón Completo de Deudores Activos</h2>
+                        <p class="text-xs text-slate-500">Listado depurado con codificación corregida (Ñ y acentos restaurados) y agrupado por persona.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text" id="filterDebtorsTable" oninput="renderDebtorsTable()" placeholder="Filtrar en la tabla..."
+                            class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs outline-none focus:border-inst-600">
+                        <button onclick="exportDebtorsToExcel()" class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-file-excel"></i> Exportar Reporte Excel (.xlsx)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
+                                <th class="py-3 px-4">Estado</th>
+                                <th class="py-3 px-4">Nombre del Deudor</th>
+                                <th class="py-3 px-4">Matrícula</th>
+                                <th class="py-3 px-4">Libros Adeudados y Fechas</th>
+                                <th class="py-3 px-4 text-right">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="debtorsTableBody" class="divide-y divide-slate-200 text-sm">
+                            <!-- Renderizado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Historial de Libros Devueltos / Solvencias -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <h3 class="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-emerald-600"></i>
+                    Historial de Libros Devueltos / Adeudos Liquidados en esta PC
+                </h3>
+                <div id="resolvedHistoryContainer" class="space-y-2 max-h-60 overflow-y-auto text-xs text-slate-600">
+                    <!-- Renderizado por JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- PESTAÑA 3: CATÁLOGO UNIFICADO DE LIBROS (ARCHIVOS 1 Y 2)  -->
+        <!-- ========================================================= -->
+        <section id="tabCatalog" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Catálogo Unificado de Títulos (Autocompletado)</h2>
+                        <p class="text-xs text-slate-500">
+                            Alimenta el buscador de libros cuando el bibliotecario registra un nuevo préstamo. Incluye las tablas principales (Columnas A-I) y las listas derechas (Columna M) de ambos inventarios.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="filterCatalogInput" oninput="renderCatalogTable()" placeholder="Buscar por título, autor o código..."
+                            class="px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs w-64 outline-none focus:border-inst-600">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-200 max-h-[500px]">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="sticky top-0 bg-slate-100 shadow-sm">
+                            <tr class="text-slate-600 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200">
+                                <th class="py-3 px-4">Código / Clasificación</th>
+                                <th class="py-3 px-4">Título del Libro</th>
+                                <th class="py-3 px-4">Autor / Editorial</th>
+                                <th class="py-3 px-4">Origen / Columna</th>
+                                <th class="py-3 px-4 text-right">Prestar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="catalogTableBody" class="divide-y divide-slate-200 text-xs">
+                            <!-- Renderizado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- PESTAÑA 4: IMPORTADOR DIRECTO DE LOS 3 EXCEL (ETL)        -->
+        <!-- ========================================================= -->
+        <section id="tabExcelETL" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="max-w-3xl">
+                    <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+                        Motor ETL Automático en el Navegador
+                    </span>
+                    <h2 class="text-xl font-bold text-slate-800 mt-2">Carga y Limpieza Instantánea de tus 3 Archivos Excel</h2>
+                    <p class="text-xs text-slate-600 mt-1 leading-relaxed">
+                        Selecciona tus archivos <code>.xlsx</code> o <code>.xls</code> directamente desde tu computadora. La aplicación leerá exactamente las filas y columnas configuradas sin subir nada a internet, reparando automáticamente errores de codificación como <code>MUÃ'OZ</code> &rarr; <code>MUÑOZ</code> y <code>DISEÃ'O</code> &rarr; <code>DISEÑO</code>.
+                    </p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-5 mt-6">
+                    <!-- Tarjeta Archivo 1 -->
+                    <div class="border-2 border-dashed border-slate-300 hover:border-inst-500 rounded-2xl p-5 bg-slate-50/60 flex flex-col justify-between transition">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded-lg bg-blue-100 text-blue-800 font-bold text-xs">Archivo 1</span>
+                                <i class="fa-solid fa-file-excel text-2xl text-emerald-600"></i>
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-800">Inventario Biblioteca Posgrado</h3>
+                            <ul class="text-[11px] text-slate-500 mt-2 space-y-1 list-disc list-inside">
+                                <li>Encabezados principales en <strong>Fila 1 (A1:I1)</strong></li>
+                                <li>Títulos principales en <strong>Columna E (E2+)</strong></li>
+                                <li>Lista derecha adicional en <strong>Columna M (M2+)</strong></li>
+                            </ul>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200">
+                            <label class="w-full py-2.5 px-4 bg-white hover:bg-blue-50 text-inst-700 border border-inst-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition">
+                                <i class="fa-solid fa-upload"></i> Seleccionar Excel 1 (.xlsx)
+                                <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event, 'posgrado')">
+                            </label>
+                            <p id="statusExcel1" class="text-[11px] text-center text-slate-500 mt-2">Datos de muestra pre-cargados</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta Archivo 2 -->
+                    <div class="border-2 border-dashed border-slate-300 hover:border-inst-500 rounded-2xl p-5 bg-slate-50/60 flex flex-col justify-between transition">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-800 font-bold text-xs">Archivo 2</span>
+                                <i class="fa-solid fa-file-excel text-2xl text-emerald-600"></i>
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-800">Inventario de Colecciones</h3>
+                            <ul class="text-[11px] text-slate-500 mt-2 space-y-1 list-disc list-inside">
+                                <li>Ignora las primeras 10 filas de logos</li>
+                                <li>Encabezados en <strong>Fila 11 (A11:I11)</strong>, datos <strong>E12+</strong></li>
+                                <li>Lista derecha adicional en <strong>Columna M (M2+)</strong></li>
+                            </ul>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200">
+                            <label class="w-full py-2.5 px-4 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition">
+                                <i class="fa-solid fa-upload"></i> Seleccionar Excel 2 (.xlsx)
+                                <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event, 'colecciones')">
+                            </label>
+                            <p id="statusExcel2" class="text-[11px] text-center text-slate-500 mt-2">Datos de muestra pre-cargados</p>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta Archivo 3 -->
+                    <div class="border-2 border-dashed border-red-300 hover:border-red-500 rounded-2xl p-5 bg-red-50/30 flex flex-col justify-between transition">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded-lg bg-red-100 text-red-800 font-bold text-xs">Archivo 3 (Buró)</span>
+                                <i class="fa-solid fa-file-shield text-2xl text-red-600"></i>
+                            </div>
+                            <h3 class="font-bold text-sm text-slate-800">Reporte de Deudores</h3>
+                            <ul class="text-[11px] text-slate-600 mt-2 space-y-1 list-disc list-inside">
+                                <li>Encabezados en <strong>Fila 2 (A2:D2)</strong></li>
+                                <li>Datos desde <strong>Fila 3</strong> (Col A: Nombre, B: Matrícula, C: Fecha, D: Libro)</li>
+                                <li>Repara <code>Ã'</code> &rarr; <code>Ñ</code> y agrupa deudores</li>
+                            </ul>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-red-200">
+                            <label class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm transition">
+                                <i class="fa-solid fa-file-import"></i> Cargar Excel Deudores (.xlsx)
+                                <input type="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="handleExcelUpload(event, 'deudores')">
+                            </label>
+                            <p id="statusExcel3" class="text-[11px] text-center text-red-700 font-medium mt-2">25 registros de muestra activos</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bitácora de Limpieza ETL -->
+                <div class="mt-6 bg-slate-900 text-slate-200 rounded-2xl p-4 font-mono text-xs">
+                    <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-2">
+                        <span class="text-emerald-400 font-bold"><i class="fa-solid fa-terminal mr-1.5"></i> Consola de Auditoría y Limpieza ETL</span>
+                        <span class="text-[10px] text-slate-400">Procesamiento 100% local en milisegundos</span>
+                    </div>
+                    <div id="etlConsoleLog" class="space-y-1 max-h-40 overflow-y-auto text-[11px] text-slate-300">
+                        <div>[SISTEMA] Motor ETL inicializado con las coordenadas de celdas de Posgrado en Ingeniería Civil.</div>
+                        <div>[LIMPIEZA] Regla activa: Reparación automática de caracteres corruptos (MUÃ'OZ -> MUÑOZ, PATIÃ'O -> PATIÑO, DISEÃ'O -> DISEÑO).</div>
+                        <div>[LIMPIEZA] Regla activa: Detección fonética/Levenshtein para apellidos con errores de dedo (BAIZABAL <-> BAIZBAL).</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- PESTAÑA 5: MIGRACIÓN ENTRE COMPUTADORAS Y SEGURIDAD       -->
+        <!-- ========================================================= -->
+        <section id="tabMigration" class="tab-content hidden space-y-6">
+            <div class="grid md:grid-cols-2 gap-6">
+                <!-- Panel de Portabilidad / Migración de PC -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center text-xl mb-3">
+                            <i class="fa-solid fa-computer"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-800">Migrar Datos a otra Computadora (USB o Carpeta Local)</h3>
+                        <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                            Si cambian la computadora de la biblioteca o quieres llevarte un respaldo completo en una memoria USB, descarga el archivo maestro <code>.json</code> y cárgalo en la computadora nueva con un solo clic.
+                        </p>
+
+                        <div class="mt-5 space-y-3">
+                            <button onclick="exportMasterJSON()" class="w-full py-3 px-4 bg-inst-700 hover:bg-inst-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition">
+                                <i class="fa-solid fa-download"></i> 1. Descargar Base de Datos Completa (.JSON para USB)
+                            </button>
+
+                            <label class="w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition">
+                                <i class="fa-solid fa-file-arrow-up text-inst-700"></i> 2. Restaurar / Cargar Base de Datos en PC Nueva (.JSON)
+                                <input type="file" accept=".json" class="hidden" onchange="importMasterJSON(event)">
+                            </label>
+
+                            <button onclick="connectLocalDiskFile()" class="w-full py-3 px-4 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition">
+                                <i class="fa-solid fa-hard-drive text-amber-600"></i> 3. Vincular Archivo Fijo en el Disco Duro de esta PC
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Último guardado automático en navegador: <strong id="lastSavedTimestamp" class="text-slate-600">Hace un momento</strong></span>
+                        <button onclick="resetToFactorySample()" class="text-red-500 hover:underline font-medium">Restaurar datos de fábrica</button>
+                    </div>
+                </div>
+
+                <!-- Panel de Seguridad y Cambio de Contraseña -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-3">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-800">Seguridad y Contraseña del Bibliotecario</h3>
+                    <p class="text-xs text-slate-500 mt-1">
+                        Configura la clave personal de la computadora de la biblioteca. Si algún día el bibliotecario olvida su contraseña, tú como administrador puedes desbloquearla con la llave maestra: <code class="bg-slate-100 px-1.5 py-0.5 rounded font-mono font-bold text-slate-700">ADMIN-ING-2026</code>.
+                    </p>
+
+                    <form onsubmit="updateCredentials(event)" class="mt-4 space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Nombre de Usuario</label>
+                            <input type="text" id="cfgUser" required class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Nueva Contraseña de Acceso</label>
+                            <input type="password" id="cfgNewPass" required minlength="4" placeholder="Escribe la nueva contraseña..." class="w-full px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs">
+                        </div>
+                        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition">
+                            <i class="fa-solid fa-floppy-disk mr-1"></i> Actualizar Credenciales en esta PC
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================== -->
+    <!-- MODAL: REGISTRAR NUEVO PRÉSTAMO / ADEUDO   -->
+    <!-- ========================================== -->
+    <div id="newDebtModal" class="fixed inset-0 z-40 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200">
+            <div class="bg-inst-800 text-white px-6 py-4 flex items-center justify-between">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-book-medical text-amber-400"></i>
+                    Registrar Préstamo / Adeudo en el Buró
+                </h3>
+                <button onclick="closeModal('newDebtModal')" class="text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="newDebtForm" onsubmit="saveNewDebtRecord(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Nombre Completo del Alumno / Solicitante *</label>
+                    <input type="text" id="modalDebtorName" required placeholder="Ej. JUAN CARLOS PÉREZ LÓPEZ"
+                        oninput="this.value = this.value.toUpperCase()"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold focus:border-inst-600 outline-none">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Matrícula / ID (Recomendado)</label>
+                        <input type="text" id="modalDebtorMatricula" placeholder="Ej. 1849201X"
+                            oninput="this.value = this.value.toUpperCase()"
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:border-inst-600 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Fecha del Préstamo *</label>
+                        <input type="date" id="modalLoanDate" required
+                            class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:border-inst-600 outline-none">
+                    </div>
+                </div>
+
+                <!-- Buscador de Libros con Autocompletado del Catálogo -->
+                <div class="relative">
+                    <label class="block text-xs font-bold uppercase text-slate-500 mb-1">
+                        Título del Libro o Código de Barras *
+                        <span class="text-[10px] font-normal text-emerald-600 ml-1">(Autocompletado de Inventarios 1 y 2)</span>
+                    </label>
+                    <input type="text" id="modalBookTitle" required autocomplete="off"
+                        oninput="filterBookSuggestions(this.value)"
+                        placeholder="Escribe parte del título o código (ej. Mecánica de Suelos, PGBC...)"
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:border-inst-600 outline-none">
+                    <!-- Lista desplegable de sugerencias -->
+                    <div id="bookSuggestionsDropdown" class="hidden absolute left-0 right-0 top-full mt-1 bg-white border border-slate-300 rounded-xl shadow-xl max-h-48 overflow-y-auto z-50 divide-y divide-slate-100">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-200">
+                    <button type="button" onclick="closeModal('newDebtModal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-inst-700 hover:bg-inst-800 text-white text-xs font-bold shadow-md transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Guardar en el Buró
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- NOTIFICACIÓN FLOTANTE (TOAST)              -->
+    <!-- ========================================== -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 text-xs font-medium">
+            <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+            <span id="toastMessage">Operación exitosa</span>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- LÓGICA DE ARQUITECTURA Y DATOS (JAVASCRIPT)-->
+    <!-- ========================================== -->
+    <script>
+        const STORAGE_KEY = 'BURO_POSGRADO_CIVIL_DB_V1';
+        const MASTER_RECOVERY_KEY = 'ADMIN-ING-2026';
+        let localFileHandle = null; // Para File System Access API
+
+        // Datos iniciales extraídos fielmente de las 3 capturas del usuario
+        const INITIAL_SAMPLE_DATA = {
+            credentials: {
+                username: 'bibliotecario',
+                password: 'posgrado2026'
+            },
+            lastUpdated: new Date().toISOString(),
+            debtors: [
+                { id: 'd1', nombre: 'ARIEL DAVID FRIAS BAIZABAL', matricula: '', fecha: '22/01/2020', libro: 'DISEÑO DE CONCRETO REFORZADO.- MC.COMARC' },
+                { id: 'd2', nombre: 'ARIEL DAVID FRIAS BAIZBAL', matricula: '', fecha: '22/01/2020', libro: 'REINFORCED CONCRETE SLABS' },
+                { id: 'd3', nombre: 'BERNICE RAMIREZ OLVERA', matricula: '', fecha: '11/12/2015', libro: 'REIN FORCED CONCRETE SLABS SECOND EDITION' },
+                { id: 'd4', nombre: 'DANIEL MAYCOTTE SALAZAR', matricula: '', fecha: '13/03/2015', libro: 'INGENIERIA DE CIMENTACIONES.- MANUEL DELGADO VARGAS' },
+                { id: 'd5', nombre: 'DANIEL MAYCOTTE SALAZAR', matricula: '', fecha: '13/03/2015', libro: 'MECANICA DE SUELOS VOL. 1.- JUAREZ BADILLO' },
+                { id: 'd6', nombre: 'ERIKA DURAN MUÑOZ', matricula: '', fecha: '15/10/2010', libro: 'QUIMICA MEDIOAMBIENTAL.- THOMAS G. SPIRO' },
+                { id: 'd7', nombre: 'ERIKA DURAN MUÑOZ', matricula: '', fecha: '16/03/2011', libro: 'TRATAMIENTO BIOLOGICO DE AGUAS.- WINKLER.' },
+                { id: 'd8', nombre: 'FRANCISCO PEREZ T', matricula: '', fecha: '23/06/2010', libro: 'SEISMIC DESIGN OF REINFORCED AND PRECAST CONCRETE BUILDINGS- LINDERBURG.MICHAEL.' },
+                { id: 'd9', nombre: 'GABRIEL NIETO GUERRERO', matricula: '', fecha: '27/09/2012', libro: 'ALGEBRA LINEAL.- BERNARD KOLMAN' },
+                { id: 'd10', nombre: 'GERARDO GOMEZ GUTIERREZ', matricula: '', fecha: '25/10/2013', libro: '246 SOLVED STRUCTURAL ENGINEERING PROBLEMS.- DALE BUCKNER' },
+                { id: 'd11', nombre: 'GERARDO GOMEZ GUTIERREZ', matricula: '', fecha: '25/10/2013', libro: 'STRUCTURAL ENGINEERING REFERENCE MANUAL.- ALAN WILLIAMS' },
+                { id: 'd12', nombre: 'GERARDO LOPEZ BUSTAMANTE', matricula: '', fecha: '25/03/2015', libro: 'APLICACION DEL HDM-4 EN LA GESTION DE LA CONSERVACION DE LA CARRETERA JIQUILPAN LIMITES DE MICHOACAN Y JALISCO.- ROGELIO AVILA CORREA' },
+                { id: 'd13', nombre: 'IRVING D. SOLORZANO', matricula: '', fecha: '12/07/2010', libro: 'PROBABILIDAD Y ESTADISTICA. JACK R. BENJAMIN.' },
+                { id: 'd14', nombre: 'ISCANDER ENIKER EZEQUIEL PEREZ', matricula: '', fecha: '09/09/2008', libro: 'DINAMICA ESTRUCTURAL.- MARIO PAZ / DYNAMICS OF STRUCTURES.- ANIL K. CHOPRA / THEORY OF MATRIX STRUCTURAL ANALYSIS' },
+                { id: 'd15', nombre: 'J. JORGE ALVAREZ GARCIA', matricula: '', fecha: '10/11/2009', libro: 'INGENIERIA MECANICA DINAMICA.- R.C. HIBBELER. / VIBRATIONS DYNAMICS AND STRUCTURAL SYSTEMS' },
+                { id: 'd16', nombre: 'JAVIER SIETE VALDOVINOS', matricula: '', fecha: '08/09/2009', libro: 'SEISMIC DESIGN. PAULAY PRIESTLEY. CONCRETO REFORZADO. MC.CORMAC.' },
+                { id: 'd17', nombre: 'JORGE RUBEN TORRES VERDUZCO', matricula: '', fecha: '02/05/2018', libro: 'DYNAMICS OF STRUCTURES CHOPRA' },
+                { id: 'd18', nombre: 'JOSE ALBERTO LOPEZ BARRON', matricula: '', fecha: '25/09/2019', libro: 'STRUCTURAL DYNAMICS' },
+                { id: 'd19', nombre: 'JOSE ALBERTO ZAVALA VALDEZ', matricula: '', fecha: '08/03/2013', libro: 'FRAGILIDAD BASADA EN DESLIZAMIENTOS.- JAVIER SIETE VALDOVINOS.' },
+                { id: 'd20', nombre: 'JOSE ALFREDO CHAVEZ', matricula: '', fecha: '24/04/2018', libro: 'MECANICA DE SUELOS, DAVID REID' },
+                { id: 'd21', nombre: 'JOSE ANTONIO VARGAS MUJICA', matricula: '', fecha: '13/10/2009', libro: 'MANUAL DE CAMINOS VECINALES. RENE ETCHARREN. TOPOGRAFIA Y FOTOGRAMETRIA.- CARL OLOF TERNRYD.' },
+                { id: 'd22', nombre: 'JOSE BARAJAS SALCEDO', matricula: '', fecha: '07/07/2011', libro: 'MECANICA DE SUELOS. TOMO UNO. JUAREZ BADILLO Y RICO RODRIGUEZ.' },
+                { id: 'd23', nombre: 'JOSE BARAJAS SALCEDO', matricula: '', fecha: '02/02/2012', libro: 'CARACTERIZACION DE MEZCLAS ASFALTICAS.- GIBRAN ANTONIO MORENO.' },
+                { id: 'd24', nombre: 'JOSE GREGORIO GARCIA PATIÑO', matricula: '', fecha: '13/04/2010', libro: 'DISEÑO SISMICO DE EDIFICIOS. BAZAN/MELI' },
+                { id: 'd25', nombre: 'JUAN ALONSO VILLALON C.', matricula: '', fecha: '05/10/2010', libro: 'BIOLOGIA DE LOS MICROORGANISMOS.- BROCK. METODOS NORMALIZADOS.- APHA-AWWA-WPCF.' }
+            ],
+            resolvedHistory: [],
+            catalog: [
+                // Muestra representativa de Archivo 1 (Posgrado) y Archivo 2 (Colecciones) + Columna M
+                { codigo: 'PGBC000001', clasificacion: 'QA76.K35 1981 C.1', titulo: '16-BIT MICROPROCESSOR SYSTEMS', autor: 'Katz, Peter', origen: 'Inventario Posgrado (Col E)' },
+                { codigo: 'PGBC000002', clasificacion: 'TA330.L35 2001', titulo: '101 SOLVED CIVIL ENGINEERING PROBLEMS', autor: 'Lindeburg, Michael R.', origen: 'Inventario Posgrado (Col E)' },
+                { codigo: 'PGBC000003', clasificacion: 'TA645.B83 1997', titulo: '246 SOLVED STRUCTURAL ENGINEERING PROBLEMS', autor: 'Buckner, C. Dale', origen: 'Inventario Posgrado (Col E)' },
+                { codigo: 'PGBC000006', clasificacion: 'TA658.44.B37 2003', titulo: '345 SOLVED SEISMIC DESIGN PROBLEMS', autor: 'Baradar, Majid', origen: 'Inventario Posgrado (Col E)' },
+                { codigo: 'PGBC000036', clasificacion: 'TA330.A53 1992', titulo: 'ADMINISTRACION DE EMPRESAS CONSTRUCTORAS', autor: 'Suárez Salazar, Carlos', origen: 'Inventario Posgrado (Col E)' },
+                { codigo: 'POS-COL-M1', clasificacion: 'COL-M', titulo: 'DISEÑO Y CONSTRUCCION DE CIMBRAS', autor: 'Catálogo Posgrado', origen: 'Inventario Posgrado (Col M)' },
+                { codigo: 'POS-COL-M2', clasificacion: 'COL-M', titulo: 'INGENIERIA DE TRANSITO', autor: 'Catálogo Posgrado', origen: 'Inventario Posgrado (Col M)' },
+                { codigo: 'POS-COL-M3', clasificacion: 'COL-M', titulo: 'HIGHWAY CAPACITY MANUAL', autor: 'Catálogo Posgrado', origen: 'Inventario Posgrado (Col M)' },
+                { codigo: 'PGBC001001', clasificacion: 'QA276.S25 2000', titulo: 'DATOS VIALES 2000', autor: 'SCT', origen: 'Inventario Colecciones (Fila 12+ Col E)' },
+                { codigo: 'PGBC001002', clasificacion: 'QA76.73.G83 2006', titulo: 'SCIENTIFIC COMPUTING WITH MATLAB', autor: 'Quarteroni, Alfio', origen: 'Inventario Colecciones (Fila 12+ Col E)' },
+                { codigo: 'PGBC001014', clasificacion: 'TD745.A48 1999', titulo: 'ALTERNATIVAS DE TRATAMIENTO DE AGUAS RESIDUALES', autor: 'Adalberto Noyola Robles', origen: 'Inventario Colecciones (Fila 12+ Col E)' },
+                { codigo: 'PGBC001016', clasificacion: 'TA710.L35 2005', titulo: 'LANDSLIDE HAZARD AND RISK', autor: 'Thomas Glade', origen: 'Inventario Colecciones (Fila 12+ Col E)' },
+                { codigo: 'PGBC001019', clasificacion: 'TA654.6.B39 2007', titulo: 'DISEÑO SISMICO DE ESTRUCTURAS', autor: 'Enrique Bazán Zurita', origen: 'Inventario Colecciones (Fila 12+ Col E)' },
+                { codigo: 'COL-DER-M1', clasificacion: 'COL-M', titulo: 'EL TERREMOTO DE 1985', autor: 'Sociedad Mexicana de Ing. Sísmica', origen: 'Inventario Colecciones (Col M)' },
+                { codigo: 'COL-DER-M2', clasificacion: 'COL-M', titulo: 'MANUAL DE DISEÑO DE OBRAS CIVILES (CFE)', autor: 'Comisión Federal de Electricidad', origen: 'Inventario Colecciones (Col M)' }
+            ]
+        };
+
+        let appState = null;
+
+        // =====================================================
+        // 1. MOTOR DE LIMPIEZA DE TEXTO Y REPARACIÓN MOJIBAKE
+        // =====================================================
+        function cleanCorruptedSpanishText(raw) {
+            if (raw === null || raw === undefined) return '';
+            let str = String(raw).trim();
+
+            // Reparar patrones corruptos exactos vistos en el Excel de Deudores (MUÃ'OZ, PATIÃ'O, DISEÃ'O)
+            str = str
+                .replace(/Ã['’‘`´]/g, 'Ñ')
+                .replace(/Ã±/g, 'ñ')
+                .replace(/Ã‘/g, 'Ñ')
+                .replace(/MU\?OZ/gi, 'MUÑOZ')
+                .replace(/PATI\?O/gi, 'PATIÑO')
+                .replace(/DISE\?O/gi, 'DISEÑO')
+                .replace(/Ã¡/g, 'á').replace(/Ã©/g, 'é').replace(/Ã­/g, 'í').replace(/Ã³/g, 'ó').replace(/Ãº/g, 'ú')
+                .replace(/Ã/g, 'Í'); // Cuando queda suelta en mayúsculas corruptas
+
+            // Normalizar espacios múltiples
+            return str.replace(/\s+/g, ' ').trim();
+        }
+
+        // Quitar acentos y caracteres especiales para comparación de búsqueda (pero manteniendo Ñ distinguible o equivalente a N)
+        function normalizeForSearch(str) {
+            if (!str) return '';
+            return cleanCorruptedSpanishText(str)
+                .toUpperCase()
+                .replace(/Ñ/g, 'N')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^A-Z0-9\s]/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        // Distancia de Levenshtein para tolerar errores de dedo (ej. BAIZABAL vs BAIZBAL)
+        function levenshteinDistance(a, b) {
+            const matrix = [];
+            for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (let i = 1; i <= b.length; i++) {
+                for (let j = 1; j <= a.length; j++) {
+                    if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            Math.min(matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+                        );
+                    }
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+
+        // Calcula similitud entre dos nombres completos (0 a 1)
+        function nameSimilarityScore(nameA, nameB) {
+            const normA = normalizeForSearch(nameA);
+            const normB = normalizeForSearch(nameB);
+            if (!normA || !normB) return 0;
+            if (normA === normB) return 1.0;
+
+            const maxLen = Math.max(normA.length, normB.length);
+            const dist = levenshteinDistance(normA, normB);
+            return (maxLen - dist) / maxLen;
+        }
+
+        // =====================================================
+        // 2. INICIALIZACIÓN Y PERSISTENCIA LOCAL
+        // =====================================================
+        function initApp() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    appState = JSON.parse(saved);
+                } catch (e) {
+                    appState = JSON.parse(JSON.stringify(INITIAL_SAMPLE_DATA));
+                }
+            } else {
+                appState = JSON.parse(JSON.stringify(INITIAL_SAMPLE_DATA));
+                saveStateToStorage(false);
+            }
+
+            // Inicializar fecha de hoy en el formulario modal
+            document.getElementById('modalLoanDate').valueAsDate = new Date();
+            document.getElementById('cfgUser').value = appState.credentials.username;
+
+            refreshAllViews();
+        }
+
+        async function saveStateToStorage(showNotification = true) {
+            appState.lastUpdated = new Date().toISOString();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+
+            const timeStr = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const lbl = document.getElementById('lastSavedTimestamp');
+            if (lbl) lbl.textContent = `Hoy a las ${timeStr}`;
+
+            // Si hay un archivo físico del disco duro vinculado, autoguardar ahí también
+            if (localFileHandle) {
+                try {
+                    const writable = await localFileHandle.createWritable();
+                    await writable.write(JSON.stringify(appState, null, 2));
+                    await writable.close();
+                } catch (err) {
+                    console.warn('No se pudo autoguardar en el archivo físico:', err);
+                }
+            }
+
+            if (showNotification) {
+                showToast('Cambios guardados en la memoria de esta PC');
+            }
+        }
+
+        function refreshAllViews() {
+            updateKPIs();
+            checkNearDuplicateDebtors();
+            renderDebtorsTable();
+            renderResolvedHistory();
+            renderCatalogTable();
+            const currentQuery = document.getElementById('buroSearchInput').value;
+            if (currentQuery.trim().length > 0) {
+                evaluateSemaphore(currentQuery);
+            }
+        }
+
+        // Agrupar deudores por persona (unificando mismos nombres exactos)
+        function getGroupedDebtors() {
+            const map = new Map();
+            appState.debtors.forEach(item => {
+                const cleanName = cleanCorruptedSpanishText(item.nombre).toUpperCase();
+                const key = normalizeForSearch(cleanName);
+                if (!key) return;
+
+                if (!map.has(key)) {
+                    map.set(key, {
+                        key,
+                        nombre: cleanName,
+                        matricula: item.matricula || '',
+                        items: []
+                    });
+                }
+                const group = map.get(key);
+                if (!group.matricula && item.matricula) {
+                    group.matricula = item.matricula;
+                }
+                group.items.push(item);
+            });
+            return Array.from(map.values()).sort((a, b) => a.nombre.localeCompare(b.nombre));
+        }
+
+        function updateKPIs() {
+            const grouped = getGroupedDebtors();
+            document.getElementById('kpiActiveDebtors').textContent = grouped.length;
+            document.getElementById('badgeDebtorsCount').textContent = grouped.length;
+            document.getElementById('kpiTotalBooksOwed').textContent = appState.debtors.length;
+            document.getElementById('kpiCatalogTitles').textContent = appState.catalog.length;
+            document.getElementById('badgeCatalogCount').textContent = appState.catalog.length;
+            document.getElementById('kpiResolvedCount').textContent = appState.resolvedHistory.length;
+        }
+
+        // =====================================================
+        // 3. DETECCIÓN Y UNIFICACIÓN DE ERRORES DE CAPTURA
+        // =====================================================
+        function findNearDuplicatePairs() {
+            const grouped = getGroupedDebtors();
+            const pairs = [];
+            for (let i = 0; i < grouped.length; i++) {
+                for (let j = i + 1; j < grouped.length; j++) {
+                    const sim = nameSimilarityScore(grouped[i].nombre, grouped[j].nombre);
+                    if (sim >= 0.88 && sim < 1.0) {
+                        pairs.push([grouped[i], grouped[j]]);
+                    }
+                }
+            }
+            return pairs;
+        }
+
+        function checkNearDuplicateDebtors() {
+            const pairs = findNearDuplicatePairs();
+            const banner = document.getElementById('duplicateWarningBanner');
+            const textEl = document.getElementById('duplicateWarningText');
+
+            if (pairs.length > 0) {
+                banner.classList.remove('hidden');
+                const sample = pairs[0];
+                textEl.innerHTML = `Se detectaron <strong>${pairs.length}</strong> caso(s) de nombres casi idénticos (ej. <code>${sample[0].nombre}</code> y <code>${sample[1].nombre}</code>). Puedes unificarlos en un solo expediente con un clic.`;
+            } else {
+                banner.classList.add('hidden');
+            }
+        }
+
+        function unifyAllDuplicates() {
+            const pairs = findNearDuplicatePairs();
+            if (pairs.length === 0) return;
+
+            let unifiedCount = 0;
+            pairs.forEach(([groupA, groupB]) => {
+                // Elegir el nombre más largo (usualmente el que no perdió una letra como BAIZABAL vs BAIZBAL)
+                const canonicalName = groupA.nombre.length >= groupB.nombre.length ? groupA.nombre : groupB.nombre;
+                appState.debtors.forEach(d => {
+                    const norm = normalizeForSearch(d.nombre);
+                    if (norm === groupA.key || norm === groupB.key) {
+                        d.nombre = canonicalName;
+                    }
+                });
+                unifiedCount++;
+            });
+
+            logETL(`[UNIFICACIÓN] Se consolidaron ${unifiedCount} expedientes duplicados por error de captura.`);
+            saveStateToStorage(false);
+            refreshAllViews();
+            showToast(`Se unificaron ${unifiedCount} expediente(s) duplicados correctamente`);
+        }
+
+        // =====================================================
+        // 4. MOTOR DEL SEMÁFORO (BURÓ DE CRÉDITO)
+        // =====================================================
+        function quickTestSearch(query) {
+            const input = document.getElementById('buroSearchInput');
+            input.value = query;
+            evaluateSemaphore(query);
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('buroSearchInput');
+            input.value = '';
+            evaluateSemaphore('');
+        }
+
+        function evaluateSemaphore(rawQuery) {
+            const container = document.getElementById('semaphoreResultContainer');
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const query = normalizeForSearch(rawQuery);
+
+            if (!query || query.length < 2) {
+                clearBtn.classList.add('hidden');
+                container.innerHTML = `
+                    <div class="bg-slate-50 border border-dashed border-slate-300 rounded-2xl p-8 text-center">
+                        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white shadow-sm border border-slate-200 mb-3">
+                            <span class="w-3.5 h-3.5 rounded-full bg-red-500"></span>
+                            <span class="w-3.5 h-3.5 rounded-full bg-amber-400"></span>
+                            <span class="w-3.5 h-3.5 rounded-full bg-emerald-500"></span>
+                            <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">Semáforo en Espera</span>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-700">Introduce al menos 2 letras del nombre o matrícula</h3>
+                        <p class="text-xs text-slate-500 max-w-xl mx-auto mt-1">
+                            El sistema verificará al instante si el alumno tiene libros vencidos o si está autorizado para préstamo.
+                        </p>
+                    </div>`;
+                return;
+            }
+
+            clearBtn.classList.remove('hidden');
+            const queryTokens = query.split(' ').filter(t => t.length >= 2);
+            const grouped = getGroupedDebtors();
+
+            const exactMatches = [];
+            const fuzzyMatches = [];
+
+            grouped.forEach(person => {
+                const personNorm = person.key;
+                const personTokens = personNorm.split(' ');
+                const matNorm = normalizeForSearch(person.matricula);
+
+                // 1. Coincidencia directa por subcadena o matrícula
+                if (personNorm.includes(query) || (matNorm && matNorm.includes(query))) {
+                    exactMatches.push(person);
+                    return;
+                }
+
+                // 2. Coincidencia por palabras (tolerando errores de 1 o 2 letras como BAIZABAL vs BAIZBAL)
+                let matchedTokens = 0;
+                let hadFuzzyToken = false;
+
+                queryTokens.forEach(qTok => {
+                    for (const pTok of personTokens) {
+                        if (pTok.includes(qTok) || qTok.includes(pTok)) {
+                            matchedTokens++;
+                            break;
+                        }
+                        if (qTok.length >= 4 && pTok.length >= 4) {
+                            const dist = levenshteinDistance(qTok, pTok);
+                            if (dist <= 2) {
+                                matchedTokens++;
+                                hadFuzzyToken = true;
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                if (queryTokens.length > 0 && matchedTokens === queryTokens.length) {
+                    if (hadFuzzyToken) {
+                        fuzzyMatches.push(person);
+                    } else {
+                        exactMatches.push(person);
+                    }
+                } else if (queryTokens.length >= 2 && matchedTokens >= queryTokens.length - 1) {
+                    fuzzyMatches.push(person);
+                }
+            });
+
+            // CASO A: ROJO - TIENE ADEUDOS ACTIVOS (Bloqueo de préstamo)
+            if (exactMatches.length > 0) {
+                // También incluir si hay una variante con error de dedo del mismo alumno (ej. BAIZABAL + BAIZBAL)
+                const combinedMatches = [...exactMatches];
+                fuzzyMatches.forEach(fm => {
+                    const isVariant = exactMatches.some(em => nameSimilarityScore(em.nombre, fm.nombre) >= 0.85);
+                    if (isVariant && !combinedMatches.includes(fm)) {
+                        combinedMatches.push(fm);
+                    }
+                });
+
+                renderRedVerdict(combinedMatches, rawQuery);
+                return;
+            }
+
+            // CASO B: AMARILLO - COINCIDENCIA PARCIAL O POSIBLE HOMÓNIMO / ERROR ORTOGRÁFICO
+            if (fuzzyMatches.length > 0) {
+                renderYellowVerdict(fuzzyMatches, rawQuery);
+                return;
+            }
+
+            // CASO C: VERDE - LIMPIO / AUTORIZADO PARA PRÉSTAMO
+            renderGreenVerdict(rawQuery);
+        }
+
+        function renderRedVerdict(matches, rawQuery) {
+            const totalBooks = matches.reduce((acc, m) => acc + m.items.length, 0);
+            const container = document.getElementById('semaphoreResultContainer');
+
+            const cardsHtml = matches.map(person => {
+                const booksListHtml = person.items.map(item => `
+                    <div class="bg-white rounded-xl p-3.5 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 bg-red-100 text-red-800 rounded text-[11px] font-bold">
+                                    <i class="fa-regular fa-calendar-xmark mr-1"></i> Préstamo: ${item.fecha || 'Sin fecha'}
+                                </span>
+                                <span class="text-[11px] text-slate-500 font-medium">${calculateAntiquity(item.fecha)}</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-800">${item.libro}</p>
+                        </div>
+                        <button onclick="markBookReturned('${item.id}')"
+                            class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 shadow-xs transition">
+                            <i class="fa-solid fa-check-double"></i> Marcar Devuelto
+                        </button>
+                    </div>
+                `).join('');
+
+                return `
+                    <div class="bg-red-100/70 border border-red-300 rounded-2xl p-4 space-y-3">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-red-200 pb-2.5">
+                            <div>
+                                <h4 class="text-base font-extrabold text-red-950 flex items-center gap-2">
+                                    <i class="fa-solid fa-user-xmark text-red-600"></i> ${person.nombre}
+                                </h4>
+                                <p class="text-xs text-red-800">
+                                    Matrícula: <strong>${person.matricula || 'No registrada en el Excel histórico'}</strong>
+                                    <button onclick="promptMatriculaUpdate('${person.key}', '${person.nombre}')" class="ml-2 underline text-inst-700 font-semibold hover:text-inst-900">
+                                        Editar matrícula
+                                    </button>
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-3 py-1 bg-red-600 text-white rounded-full text-xs font-extrabold">
+                                    Debe ${person.items.length} registro(s)
+                                </span>
+                                <button onclick="openNewDebtForPerson('${person.nombre.replace(/'/g, "\\'")}', '${person.matricula}')"
+                                    class="px-3 py-1 bg-white hover:bg-red-50 text-red-700 border border-red-300 rounded-full text-xs font-bold transition">
+                                    + Agregar otro libro
+                                </button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            ${booksListHtml}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="bg-red-50 border-2 border-red-500 rounded-2xl p-5 space-y-4 pulse-red">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-14 h-14 rounded-2xl bg-red-600 text-white flex items-center justify-center text-2xl shrink-0 shadow-md">
+                                <i class="fa-solid fa-hand"></i>
+                            </div>
+                            <div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-red-200 text-red-900 text-[11px] font-extrabold uppercase tracking-wider">
+                                    Semáforo Rojo • Préstamo No Autorizado
+                                </span>
+                                <h3 class="text-xl font-black text-red-900 mt-0.5">
+                                    ¡ALTO! DEUDOR CON ${totalBooks} ADEUDO(S) PENDIENTE(S)
+                                </h3>
+                                <p class="text-xs text-red-800">
+                                    No se recomienda autorizar nuevos préstamos hasta que liquide o devuelva los ejemplares listados abajo.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderYellowVerdict(fuzzyMatches, rawQuery) {
+            const container = document.getElementById('semaphoreResultContainer');
+            const cleanCandidate = cleanCorruptedSpanishText(rawQuery).toUpperCase();
+
+            const listHtml = fuzzyMatches.map(person => `
+                <div class="bg-white rounded-xl p-3.5 border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">${person.nombre}</p>
+                        <p class="text-xs text-amber-800 font-medium">
+                            Debe <strong>${person.items.length}</strong> libro(s): <em>${person.items.map(i => i.libro).join(' | ')}</em>
+                        </p>
+                    </div>
+                    <button onclick="quickTestSearch('${person.nombre.replace(/'/g, "\\'")}')"
+                        class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold shrink-0 transition">
+                        Ver Expediente Completo
+                    </button>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-14 h-14 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-2xl shrink-0 shadow-md">
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            </div>
+                            <div>
+                                <span class="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[11px] font-extrabold uppercase tracking-wider">
+                                    Semáforo Amarillo • Precaución por Similitud / Homónimo
+                                </span>
+                                <h3 class="text-lg font-black text-amber-950 mt-0.5">
+                                    "${cleanCandidate}" coincide parcialmente con deudores registrados
+                                </h3>
+                                <p class="text-xs text-amber-900">
+                                    Verifica su credencial para descartar que sea una de las siguientes personas con errores de captura:
+                                </p>
+                            </div>
+                        </div>
+                        <button onclick="openNewDebtForPerson('${cleanCandidate.replace(/'/g, "\\'")}', '')"
+                            class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shrink-0 shadow transition">
+                            Es otra persona: Prestar Libro
+                        </button>
+                    </div>
+                    <div class="space-y-2">
+                        ${listHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGreenVerdict(rawQuery) {
+            const container = document.getElementById('semaphoreResultContainer');
+            const cleanCandidate = cleanCorruptedSpanishText(rawQuery).toUpperCase();
+
+            // Revisar si tiene historial de libros ya devueltos anteriormente
+            const pastReturns = appState.resolvedHistory.filter(h => normalizeForSearch(h.nombre).includes(normalizeForSearch(rawQuery)));
+            const historyNote = pastReturns.length > 0
+                ? `<p class="text-xs text-emerald-800 mt-1"><i class="fa-solid fa-Medal mr-1"></i> Antecedente positivo: Ha devuelto puntualmente ${pastReturns.length} libro(s) antes.</p>`
+                : '';
+
+            container.innerHTML = `
+                <div class="bg-emerald-50 border-2 border-emerald-500 rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                    <div class="flex items-start sm:items-center gap-4">
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-3xl shrink-0 shadow-md">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[11px] font-extrabold uppercase tracking-wider">
+                                Semáforo Verde • Sin Adeudos Registrados
+                            </span>
+                            <h3 class="text-xl font-black text-emerald-950 mt-1">
+                                AUTORIZADO PARA PRÉSTAMO: "${cleanCandidate}"
+                            </h3>
+                            <p class="text-xs text-emerald-800 mt-0.5">
+                                Esta persona no presenta ningún libro pendiente en el Buró de la Biblioteca de Posgrado.
+                            </p>
+                            ${historyNote}
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-2 shrink-0">
+                        <button onclick="openNewDebtForPerson('${cleanCandidate.replace(/'/g, "\\'")}', '')"
+                            class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-book-medical text-sm"></i>
+                            Registrarle un Préstamo Ahora
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function calculateAntiquity(dateStr) {
+            if (!dateStr) return '';
+            const parts = String(dateStr).split('/');
+            if (parts.length === 3) {
+                const year = parseInt(parts[2], 10);
+                if (!isNaN(year)) {
+                    const currentYear = new Date().getFullYear();
+                    const diff = currentYear - year;
+                    if (diff <= 0) return 'Préstamo reciente (este año)';
+                    return `Hace aprox. ${diff} año(s)`;
+                }
+            }
+            return '';
+        }
+
+        // =====================================================
+        // 5. GESTIÓN DE PRÉSTAMOS, DEVOLUCIONES Y AUTOCOMPLETADO
+        // =====================================================
+        function openNewDebtForPerson(nombre, matricula = '') {
+            document.getElementById('modalDebtorName').value = nombre || '';
+            document.getElementById('modalDebtorMatricula').value = matricula || '';
+            document.getElementById('modalBookTitle').value = '';
+            document.getElementById('modalLoanDate').valueAsDate = new Date();
+            openModal('newDebtModal');
+        }
+
+        function filterBookSuggestions(query) {
+            const dropdown = document.getElementById('bookSuggestionsDropdown');
+            const norm = normalizeForSearch(query);
+            if (!norm || norm.length < 2) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            const matches = appState.catalog.filter(b =>
+                normalizeForSearch(b.titulo).includes(norm) ||
+                normalizeForSearch(b.codigo).includes(norm) ||
+                normalizeForSearch(b.autor).includes(norm)
+            ).slice(0, 10);
+
+            if (matches.length === 0) {
+                dropdown.classList.add('hidden');
+                return;
+            }
+
+            dropdown.innerHTML = matches.map(b => {
+                const fullLabel = `${b.titulo}${b.autor ? ' - ' + b.autor : ''}`;
+                return `
+                    <button type="button" onclick="selectSuggestedBook('${fullLabel.replace(/'/g, "\\'")}')"
+                        class="w-full text-left px-3.5 py-2.5 hover:bg-blue-50 transition flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${b.titulo}</p>
+                            <p class="text-[10px] text-slate-500">${b.codigo || 'S/C'} • ${b.autor || 'Autor no especificado'}</p>
+                        </div>
+                        <span class="text-[10px] px-2 py-0.5 bg-slate-100 text-slate-600 rounded font-medium shrink-0">${b.origen.split(' ')[1] || 'Catálogo'}</span>
+                    </button>
+                `;
+            }).join('');
+            dropdown.classList.remove('hidden');
+        }
+
+        function selectSuggestedBook(bookTitle) {
+            document.getElementById('modalBookTitle').value = bookTitle;
+            document.getElementById('bookSuggestionsDropdown').classList.add('hidden');
+        }
+
+        function saveNewDebtRecord(e) {
+            e.preventDefault();
+            const nombre = cleanCorruptedSpanishText(document.getElementById('modalDebtorName').value).toUpperCase();
+            const matricula = cleanCorruptedSpanishText(document.getElementById('modalDebtorMatricula').value).toUpperCase();
+            const rawDate = document.getElementById('modalLoanDate').value;
+            const libro = cleanCorruptedSpanishText(document.getElementById('modalBookTitle').value).toUpperCase();
+
+            // Formatear fecha YYYY-MM-DD a DD/MM/YYYY como en el Excel original
+            let formattedDate = rawDate;
+            if (rawDate && rawDate.includes('-')) {
+                const [y, m, d] = rawDate.split('-');
+                formattedDate = `${d}/${m}/${y}`;
+            }
+
+            appState.debtors.unshift({
+                id: 'debt_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                nombre,
+                matricula,
+                fecha: formattedDate,
+                libro
+            });
+
+            closeModal('newDebtModal');
+            saveStateToStorage(true);
+            document.getElementById('buroSearchInput').value = nombre;
+            refreshAllViews();
+            switchTab('tabSemaphore');
+        }
+
+        function markBookReturned(debtId) {
+            const idx = appState.debtors.findIndex(d => d.id === debtId);
+            if (idx === -1) return;
+
+            const record = appState.debtors[idx];
+            appState.debtors.splice(idx, 1);
+
+            appState.resolvedHistory.unshift({
+                ...record,
+                returnedAt: new Date().toLocaleDateString('es-MX') + ' ' + new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })
+            });
+
+            saveStateToStorage(false);
+            refreshAllViews();
+            showToast(`Libro devuelto por ${record.nombre}. Solvencia actualizada.`);
+        }
+
+        function promptMatriculaUpdate(personKey, personName) {
+            // Crear un pequeño cuadro inline sin usar alert/prompt nativo bloqueante
+            const container = document.getElementById('semaphoreResultContainer');
+            const editBox = document.createElement('div');
+            editBox.className = 'mt-3 p-3 bg-white border border-inst-500 rounded-xl flex items-center gap-2 shadow';
+            editBox.innerHTML = `
+                <span class="text-xs font-bold text-slate-700">Asignar Matrícula a ${personName}:</span>
+                <input type="text" id="inlineMatriculaInput" placeholder="Escribe la matrícula..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs uppercase">
+                <button onclick="saveInlineMatricula('${personKey}')" class="px-3 py-1.5 bg-inst-700 text-white rounded-lg text-xs font-bold">Guardar</button>
+            `;
+            container.prepend(editBox);
+            document.getElementById('inlineMatriculaInput').focus();
+        }
+
+        function saveInlineMatricula(personKey) {
+            const val = document.getElementById('inlineMatriculaInput').value.trim().toUpperCase();
+            appState.debtors.forEach(d => {
+                if (normalizeForSearch(d.nombre) === personKey) {
+                    d.matricula = val;
+                }
+            });
+            saveStateToStorage(true);
+            refreshAllViews();
+        }
+
+        // =====================================================
+        // 6. RENDERIZADO DE TABLAS (PADRÓN Y CATÁLOGO)
+        // =====================================================
+        function renderDebtorsTable() {
+            const tbody = document.getElementById('debtorsTableBody');
+            const filter = normalizeForSearch(document.getElementById('filterDebtorsTable').value);
+            const grouped = getGroupedDebtors().filter(g =>
+                !filter ||
+                g.key.includes(filter) ||
+                normalizeForSearch(g.matricula).includes(filter) ||
+                g.items.some(i => normalizeForSearch(i.libro).includes(filter))
+            );
+
+            if (grouped.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 text-xs">No se encontraron deudores con ese criterio.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = grouped.map(person => `
+                <tr class="hover:bg-slate-50 transition align-top">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-800">
+                            <span class="w-2 h-2 rounded-full bg-red-600"></span> Bloqueado (${person.items.length})
+                        </span>
+                    </td>
+                    <td class="py-3.5 px-4 font-bold text-slate-800">
+                        ${person.nombre}
+                    </td>
+                    <td class="py-3.5 px-4 text-xs text-slate-500 font-mono">
+                        ${person.matricula || '<span class="italic text-slate-400">Sin matrícula</span>'}
+                    </td>
+                    <td class="py-3.5 px-4 space-y-1.5">
+                        ${person.items.map(item => `
+                            <div class="flex items-center justify-between gap-2 bg-slate-100/80 px-2.5 py-1.5 rounded-lg text-xs">
+                                <div>
+                                    <span class="font-semibold text-slate-800">${item.libro}</span>
+                                    <span class="text-[11px] text-slate-500 ml-1">(${item.fecha || 'S/F'})</span>
+                                </div>
+                                <button onclick="markBookReturned('${item.id}')" class="text-emerald-700 hover:text-emerald-900 font-bold text-[11px] shrink-0 underline">
+                                    Liquidar
+                                </button>
+                            </div>
+                        `).join('')}
+                    </td>
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button onclick="switchTab('tabSemaphore'); quickTestSearch('${person.nombre.replace(/'/g, "\\'")}')"
+                            class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+                            <i class="fa-solid fa-eye mr-1"></i> Ver en Semáforo
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderResolvedHistory() {
+            const container = document.getElementById('resolvedHistoryContainer');
+            if (appState.resolvedHistory.length === 0) {
+                container.innerHTML = `<p class="text-slate-400 italic">Aún no se han liquidado adeudos en esta sesión.</p>`;
+                return;
+            }
+            container.innerHTML = appState.resolvedHistory.map(h => `
+                <div class="flex items-center justify-between p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl">
+                    <div>
+                        <span class="font-bold text-emerald-950">${h.nombre}</span> devolvió:
+                        <strong class="text-slate-800">${h.libro}</strong>
+                        <span class="text-slate-400 ml-1">(Préstamo original: ${h.fecha})</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-emerald-700 shrink-0">Liquidado: ${h.returnedAt}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderCatalogTable() {
+            const tbody = document.getElementById('catalogTableBody');
+            const filter = normalizeForSearch(document.getElementById('filterCatalogInput').value);
+
+            const filtered = appState.catalog.filter(b =>
+                !filter ||
+                normalizeForSearch(b.titulo).includes(filter) ||
+                normalizeForSearch(b.codigo).includes(filter) ||
+                normalizeForSearch(b.autor).includes(filter)
+            ).slice(0, 150); // Mostrar primeros 150 para fluidez instantánea
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">No se encontraron títulos con ese filtro.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(b => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="py-2.5 px-4 font-mono text-[11px] text-slate-600">
+                        <div><strong>${b.codigo || 'S/C'}</strong></div>
+                        <div class="text-slate-400">${b.clasificacion || ''}</div>
+                    </td>
+                    <td class="py-2.5 px-4 font-bold text-slate-800">${b.titulo}</td>
+                    <td class="py-2.5 px-4 text-slate-600">${b.autor || '-'}</td>
+                    <td class="py-2.5 px-4">
+                        <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">${b.origen}</span>
+                    </td>
+                    <td class="py-2.5 px-4 text-right">
+                        <button onclick="openModalWithBook('${b.titulo.replace(/'/g, "\\'")}')"
+                            class="px-2.5 py-1 bg-inst-50 hover:bg-inst-100 text-inst-700 rounded-lg font-bold text-[11px] transition">
+                            Prestar este libro
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openModalWithBook(bookTitle) {
+            document.getElementById('modalBookTitle').value = bookTitle;
+            openModal('newDebtModal');
+        }
+
+        // =====================================================
+        // 7. MOTOR LECTOR DE LOS 3 EXCEL (COORDENADAS EXACTAS)
+        // =====================================================
+        function logETL(msg) {
+            const consoleEl = document.getElementById('etlConsoleLog');
+            const line = document.createElement('div');
+            const time = new Date().toLocaleTimeString('es-MX', { hour12: false });
+            line.textContent = `[${time}] ${msg}`;
+            consoleEl.prepend(line);
+        }
+
+        function formatExcelDateValue(val) {
+            if (!val) return '';
+            // Si es un número serial de fecha de Excel (ej. 43852 -> 22/01/2020)
+            if (typeof val === 'number' && val > 20000 && val < 60000) {
+                const utcDays = Math.floor(val - 25569);
+                const dateObj = new Date(utcDays * 86400 * 1000);
+                const d = String(dateObj.getUTCDate()).padStart(2, '0');
+                const m = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+                const y = dateObj.getUTCFullYear();
+                return `${d}/${m}/${y}`;
+            }
+            return cleanCorruptedSpanishText(val);
+        }
+
+        function handleExcelUpload(event, fileType) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[firstSheetName];
+
+                    // Convertir toda la hoja a matriz 2D [fila][columna] (0-indexed: A=0, B=1, C=2, D=3, E=4, F=5, G=6, H=7, I=8 ... M=12)
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+                    if (fileType === 'posgrado') {
+                        processArchivo1Posgrado(rows, file.name);
+                    } else if (fileType === 'colecciones') {
+                        processArchivo2Colecciones(rows, file.name);
+                    } else if (fileType === 'deudores') {
+                        processArchivo3Deudores(rows, file.name);
+                    }
+
+                    saveStateToStorage(false);
+                    refreshAllViews();
+                } catch (err) {
+                    logETL(`[ERROR] No se pudo procesar el archivo ${file.name}: ${err.message}`);
+                    showToast('Error al leer el archivo Excel. Verifica que no esté dañado.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ARCHIVO 1: Inventario Posgrado -> Fila 1 encabezados (índice 0), datos desde Fila 2 (índice 1+). Col E (índice 4) y Col M (índice 12)
+        function processArchivo1Posgrado(rows, fileName) {
+            let mainAdded = 0;
+            let colMAdded = 0;
+
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row) continue;
+
+                // Tabla principal (Columnas A a I -> índices 0 a 8)
+                const codigo = cleanCorruptedSpanishText(row[0]);
+                const clasificacion = cleanCorruptedSpanishText(row[1]);
+                const tituloMain = cleanCorruptedSpanishText(row[4]); // Columna E
+                const autor = cleanCorruptedSpanishText(row[5]);      // Columna F
+
+                if (tituloMain && tituloMain.toUpperCase() !== 'TITULO' && tituloMain.toUpperCase() !== 'TÍTULO') {
+                    appState.catalog.push({
+                        codigo: codigo || `POS-${r + 1}`,
+                        clasificacion,
+                        titulo: tituloMain.toUpperCase(),
+                        autor,
+                        origen: 'Inventario Posgrado (Col E)'
+                    });
+                    mainAdded++;
+                }
+
+                // Lista derecha en Columna M (índice 12) desde M2 hacia abajo
+                const tituloColM = cleanCorruptedSpanishText(row[12]);
+                if (tituloColM && tituloColM.toUpperCase() !== 'TITULO' && tituloColM.toUpperCase() !== 'TÍTULO' && tituloColM.toUpperCase() !== 'ITULO') {
+                    appState.catalog.push({
+                        codigo: `POS-M-${r + 1}`,
+                        clasificacion: 'Lista Derecha Col M',
+                        titulo: tituloColM.toUpperCase(),
+                        autor: 'Catálogo Posgrado',
+                        origen: 'Inventario Posgrado (Col M)'
+                    });
+                    colMAdded++;
+                }
+            }
+
+            deduplicateCatalog();
+            document.getElementById('statusExcel1').textContent = `¡Cargado! +${mainAdded} (Col E) y +${colMAdded} (Col M)`;
+            document.getElementById('statusExcel1').className = 'text-[11px] text-center text-emerald-700 font-bold mt-2';
+            logETL(`[ARCHIVO 1 - ${fileName}] Extraídos ${mainAdded} libros de la tabla principal (E2+) y ${colMAdded} títulos de la Columna M (M2+).`);
+            showToast(`Inventario Posgrado importado: ${mainAdded + colMAdded} títulos procesados`);
+        }
+
+        // ARCHIVO 2: Inventario Colecciones -> Tabla principal encabezados en Fila 11 (índice 10), datos desde Fila 12 (índice 11+) hasta Col I. Lista derecha en Col M desde Fila 2 (índice 1+)
+        function processArchivo2Colecciones(rows, fileName) {
+            let mainAdded = 0;
+            let colMAdded = 0;
+
+            // 1. Extraer lista derecha en Columna M (índice 12) desde Fila 2 (índice 1)
+            for (let r = 1; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row) continue;
+                const tituloColM = cleanCorruptedSpanishText(row[12]);
+                if (tituloColM && !['TITULO', 'TÍTULO', 'ITULO'].includes(tituloColM.toUpperCase())) {
+                    appState.catalog.push({
+                        codigo: `COL-M-${r + 1}`,
+                        clasificacion: 'Lista Derecha Col M',
+                        titulo: tituloColM.toUpperCase(),
+                        autor: 'Colecciones DGB',
+                        origen: 'Inventario Colecciones (Col M)'
+                    });
+                    colMAdded++;
+                }
+            }
+
+            // 2. Extraer tabla principal desde Fila 12 (índice 11 en base 0) de Columna A (0) a Columna I (8)
+            for (let r = 11; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row) continue;
+                const codigo = cleanCorruptedSpanishText(row[0]);
+                const clasificacion = cleanCorruptedSpanishText(row[1]);
+                const tituloMain = cleanCorruptedSpanishText(row[4]); // Columna E
+                const autor = cleanCorruptedSpanishText(row[5]);      // Columna F
+
+                if (tituloMain && !['TITULO', 'TÍTULO'].includes(tituloMain.toUpperCase())) {
+                    appState.catalog.push({
+                        codigo: codigo || `COL-${r + 1}`,
+                        clasificacion,
+                        titulo: tituloMain.toUpperCase(),
+                        autor,
+                        origen: 'Inventario Colecciones (Fila 12+ Col E)'
+                    });
+                    mainAdded++;
+                }
+            }
+
+            deduplicateCatalog();
+            document.getElementById('statusExcel2').textContent = `¡Cargado! +${mainAdded} (Fila 12+) y +${colMAdded} (Col M)`;
+            document.getElementById('statusExcel2').className = 'text-[11px] text-center text-indigo-700 font-bold mt-2';
+            logETL(`[ARCHIVO 2 - ${fileName}] Ignoradas filas 1-10 de logos. Extraídos ${mainAdded} libros desde Fila 12 (A12:I...) y ${colMAdded} títulos de Columna M.`);
+            showToast(`Inventario Colecciones importado: ${mainAdded + colMAdded} títulos procesados`);
+        }
+
+        // ARCHIVO 3: Reporte de Deudores -> Encabezados en Fila 2 (índice 1), datos desde Fila 3 (índice 2+): Col A (0)=Nombre, Col B (1)=Matrícula, Col C (2)=Fecha, Col D (3)=Libro
+        function processArchivo3Deudores(rows, fileName) {
+            const importedDebtors = [];
+            let mojibakeFixed = 0;
+
+            for (let r = 2; r < rows.length; r++) {
+                const row = rows[r];
+                if (!row) continue;
+
+                const rawName = String(row[0] || '').trim();
+                const rawMat = String(row[1] || '').trim();
+                const rawDate = row[2];
+                const rawBook = String(row[3] || '').trim();
+
+                if (!rawName && !rawBook) continue;
+                if (rawName.toUpperCase().includes('NOMBRE DEL DEUDOR')) continue;
+
+                if (rawName.includes('Ã') || rawBook.includes('Ã')) {
+                    mojibakeFixed++;
+                }
+
+                const cleanName = cleanCorruptedSpanishText(rawName).toUpperCase();
+                const cleanMat = cleanCorruptedSpanishText(rawMat).toUpperCase();
+                const cleanDate = formatExcelDateValue(rawDate);
+                const cleanBook = cleanCorruptedSpanishText(rawBook).toUpperCase();
+
+                importedDebtors.push({
+                    id: 'xls3_' + r + '_' + Date.now(),
+                    nombre: cleanName,
+                    matricula: cleanMat,
+                    fecha: cleanDate,
+                    libro: cleanBook
+                });
+            }
+
+            if (importedDebtors.length > 0) {
+                appState.debtors = importedDebtors;
+                document.getElementById('statusExcel3').textContent = `¡Cargado! ${importedDebtors.length} adeudos (${mojibakeFixed} Ñ reparadas)`;
+                document.getElementById('statusExcel3').className = 'text-[11px] text-center text-emerald-700 font-bold mt-2';
+                logETL(`[ARCHIVO 3 - ${fileName}] Se importaron ${importedDebtors.length} registros desde la Fila 3 (A3:D...). Se repararon ${mojibakeFixed} celdas con caracteres dañados.`);
+                showToast(`Se cargaron ${importedDebtors.length} registros de deudores exitosamente`);
+            }
+        }
+
+        function deduplicateCatalog() {
+            const seen = new Set();
+            appState.catalog = appState.catalog.filter(item => {
+                const key = normalizeForSearch(item.titulo);
+                if (!key || seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        }
+
+        // =====================================================
+        // 8. MIGRACIÓN ENTRE COMPUTADORAS Y REPORTES EXCEL
+        // =====================================================
+        function exportMasterJSON() {
+            const dataStr = JSON.stringify(appState, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateTag = new Date().toISOString().slice(0, 10);
+            a.href = url;
+            a.download = `Respaldo_Buro_Biblioteca_Posgrado_${dateTag}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Archivo .JSON descargado. Listo para copiar en USB o pasar a otra PC.');
+        }
+
+        function importMasterJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed.debtors || !Array.isArray(parsed.debtors)) {
+                        throw new Error('Formato inválido');
+                    }
+                    appState = parsed;
+                    saveStateToStorage(false);
+                    refreshAllViews();
+                    showToast('¡Migración exitosa! Base de datos restaurada en esta computadora.');
+                } catch (err) {
+                    showToast('El archivo seleccionado no es un respaldo válido del sistema.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function connectLocalDiskFile() {
+            if (!('showSaveFilePicker' in window)) {
+                exportMasterJSON();
+                return;
+            }
+            try {
+                localFileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'Buro_Biblioteca_Posgrado_Datos.json',
+                    types: [{
+                        description: 'Base de Datos JSON de Biblioteca',
+                        accept: { 'application/json': ['.json'] }
+                    }]
+                });
+                await saveStateToStorage(false);
+                document.getElementById('diskSyncText').textContent = 'Sincronizado con PC';
+                document.getElementById('diskSyncBtn').className = 'px-3 py-2 rounded-xl bg-emerald-700 text-white border border-emerald-500 text-xs font-bold flex items-center gap-2 transition';
+                showToast('Archivo vinculado en disco duro. Todo cambio se guardará automáticamente.');
+            } catch (err) {
+                // Usuario canceló el diálogo
+            }
+        }
+
+        function exportDebtorsToExcel() {
+            const rows = [
+                ['DATOS DE LOS DEUDORES DE: BIBLIOTECA DEL POSGRADO EN INGENIERIA CIVIL', '', '', ''],
+                ['NOMBRE DEL DEUDOR', 'MATRICULA', 'FECHA DE PRESTAMO', 'TITULO DEL LIBRO']
+            ];
+
+            appState.debtors.forEach(d => {
+                rows.push([d.nombre, d.matricula || '', d.fecha || '', d.libro]);
+            });
+
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            ws['!cols'] = [{ wch: 36 }, { wch: 16 }, { wch: 18 }, { wch: 65 }];
+
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Deudores_Depurados');
+            const dateTag = new Date().toISOString().slice(0, 10);
+            XLSX.writeFile(wb, `Reporte_Deudores_Posgrado_Depurado_${dateTag}.xlsx`);
+            showToast('Reporte oficial en Excel (.xlsx) descargado');
+        }
+
+        function resetToFactorySample() {
+            appState = JSON.parse(JSON.stringify(INITIAL_SAMPLE_DATA));
+            saveStateToStorage(false);
+            refreshAllViews();
+            showToast('Datos restaurados a la muestra original de tus capturas');
+        }
+
+        // =====================================================
+        // 9. AUTENTICACIÓN, SEGURIDAD Y NAVEGACIÓN UI
+        // =====================================================
+        function fillDemoCredentials() {
+            document.getElementById('loginUser').value = appState.credentials.username;
+            document.getElementById('loginPass').value = appState.credentials.password;
+        }
+
+        function togglePassVisibility() {
+            const passInput = document.getElementById('loginPass');
+            const icon = document.getElementById('eyeIcon');
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                passInput.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('loginUser').value.trim();
+            const p = document.getElementById('loginPass').value.trim();
+            const alertBox = document.getElementById('loginAlert');
+
+            if (
+                (u.toLowerCase() === appState.credentials.username.toLowerCase() && p === appState.credentials.password) ||
+                p === MASTER_RECOVERY_KEY
+            ) {
+                alertBox.classList.add('hidden');
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('buroSearchInput').focus();
+                if (p === MASTER_RECOVERY_KEY) {
+                    showToast('Acceso concedido mediante Llave Maestra de Administrador');
+                }
+            } else {
+                alertBox.classList.remove('hidden');
+            }
+        }
+
+        function lockSystem() {
+            document.getElementById('loginPass').value = '';
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }
+
+        function updateCredentials(e) {
+            e.preventDefault();
+            const newUser = document.getElementById('cfgUser').value.trim();
+            const newPass = document.getElementById('cfgNewPass').value.trim();
+            if (!newUser || newPass.length < 4) return;
+
+            appState.credentials.username = newUser;
+            appState.credentials.password = newPass;
+            document.getElementById('cfgNewPass').value = '';
+            saveStateToStorage(false);
+            showToast('Usuario y contraseña actualizados correctamente');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-slate-300 hover:bg-white/10 transition whitespace-nowrap';
+            });
+
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.className = 'tab-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 bg-amber-500 text-slate-950 shadow-sm transition whitespace-nowrap';
+            }
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById('bookSuggestionsDropdown').classList.add('hidden');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('hidden');
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3800);
+        }
+
+        // Cerrar sugerencias al hacer clic afuera
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('bookSuggestionsDropdown');
+            const bookInput = document.getElementById('modalBookTitle');
+            if (dropdown && !dropdown.contains(e.target) && e.target !== bookInput) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
